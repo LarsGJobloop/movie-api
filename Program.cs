@@ -1,57 +1,56 @@
-class Movie
-{
-    private static int _id = 0;
-    public int Id { get; set; }
-    public string Title { get; set; }
-
-    public Movie(string title)
-    {
-        Title = title;
-        Id = _id++;
-    }
-}
-
 internal class Program
 {
     private static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         // Register the Movie list with the Dependency Injection Container
-        builder.Services.AddSingleton<List<Movie>>();
+        builder.Services.AddSingleton<IMovieService, MovieService>();
         var app = builder.Build();
 
         // READ: Get all movies
-        app.MapGet("/movies", (List<Movie> movies) => movies);
-        // CREATE: Adds a new movie
-        app.MapPost("/movies", (Movie? movie, List<Movie> movies) =>
+        app.MapGet("/movies", (IMovieService movieService) =>
         {
+            return movieService.GetAllMovies();
+        });
+        // CREATE: Adds a new movie
+        app.MapPost("/movies", (Movie? movie, IMovieService movieService) =>
+        {
+            // User input validation
             if (movie == null)
             {
                 return Results.BadRequest();
             }
 
-            movies.Add(movie);
+            // Calling the business logic
+            var createdMovie = movieService.CreateMovie(movie);
 
-            return Results.Created();
+            return Results.Created($"/movies/{createdMovie.Id}", createdMovie);
         });
 
         // DELETE: Delete a movie with id
-        app.MapDelete("/movies/{Id}", (int Id, List<Movie> movies) =>
+        app.MapDelete("/movies/{Id}", (int Id, IMovieService movieService) =>
         {
-            var movie = movies.Find((movie) => movie.Id == Id);
+            movieService.DeleteMovieWithId(Id);
+            return Results.Ok();
+        });
+
+        // UPDATE: Update a movie with id
+        app.MapPut("/movies/{Id}", (int Id, Movie updatedMovie, IMovieService movieService) =>
+        {
+            if (updatedMovie == null)
+            {
+                return Results.BadRequest();
+            }
+
+            var movie = movieService.UpdateMovieWithId(Id, updatedMovie);
 
             if (movie == null)
             {
                 return Results.NotFound();
             }
 
-            movies.Remove(movie);
-
-            return Results.Ok();
+            return Results.Ok(movie);
         });
-
-        // UPDATE: Update a movie with id
-        app.MapPut("/movies/{Id}", (int Id) => $"Update movie with id: {Id}");
 
         // System status
         app.MapGet("/health", () => "System healthy");
