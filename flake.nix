@@ -20,15 +20,27 @@
       devShells = forEachSupportedSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import nixpkgs {
+            inherit system;
+            config = {
+              allowUnfree = true;
+            };
+          };
         in
         {
           default = pkgs.mkShell {
             # Project dependencies
             packages = [
-              pkgs.azure-cli # For communicating with Azure through the terminal
+              # Development dependencies
               pkgs.dotnetCorePackages.sdk_8_0 # Set of tools for developing a C# .NET application
               pkgs.omnisharp-roslyn # Langauge Sever for C# and .NET
+
+              # Cloud related tools
+              pkgs.azure-cli # For communicating with Azure through the terminal
+              pkgs.terraform # For declarative provisioning of infrastructure resources
+
+              # Misc tools (not required)
+              pkgs.jq # JSON Processor
             ];
 
             # Environment Variables
