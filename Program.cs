@@ -12,6 +12,8 @@ internal class Program
         // AddSingleton registers a single instance of the service to be used throughout the application.
         // This means that the same instance of MovieService will be used every time IMovieService is requested.
         builder.Services.AddSingleton<IMovieService, MovieService>();
+
+        // Specify the CORS policy. here we allow everything, okay for learning, bad for production
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAll",
@@ -25,6 +27,8 @@ internal class Program
 
         // 'Build' creates the WebApplication object from the configuration set up by the builder.
         var app = builder.Build();
+
+        // Enable the CORS policy for all endpoints
         app.UseCors("AllowAll");
 
         // Mapping routes to HTTP endpoints:
